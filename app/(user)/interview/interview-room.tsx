@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { vapi } from "../../utils/vapi";
 import Agent from "@/components/Agent";
 import { motion, AnimatePresence } from "motion/react";
@@ -9,9 +9,11 @@ import { useSession } from "next-auth/react";
 import Loader from "@/components/Loader";
 import { interviewer } from "@/constant/interviewer";
 import axios from 'axios'
+import Feedback from "@/components/Feedback";
 
 
 export default function InterviewRoom({interview}:{interview: any}) {
+    const [feedbacks, setFeedbacks] = useState<any>([])
     const [connecting, setConnecting] = useState(false);
     const [connected, setConnected] = useState(false);
     const [message, setMessage] = useState('')
@@ -20,22 +22,28 @@ export default function InterviewRoom({interview}:{interview: any}) {
     const [userSpeak, setUserSpeaks] = useState(false)
     const [messages, setMessages] = useState<string[]>([]);
     const { data: session } = useSession()
-    
-
     // hook into Vapi events
+    const validFeedbacks = useMemo(() => (
+        feedbacks.filter((fb:any)=> fb?.category && fb.feedback )
+      ), [feedbacks])
     useEffect(() => {
-
+        
         vapi.on("call-start", () => {
             setConnecting(false);
             setConnected(true);
         });
 
         vapi.on("message", (message) => {
+            console.log(message);
+            
             if (message?.role === 'user') {
                 setUserSpeaks(true)
                 if(message?.transcript){
                     setMessage(message?.transcript)
-                    setMessages(prev => [...prev, `${message?.role} : ${message?.transcript}`]);
+                    if(message?.transcriptType === 'final'){
+                        setMessages(prev => [...prev, `${message?.role} : ${message?.transcript}`]);
+
+                    }
                 }
             }else if(message?.role === 'assistant') {
                 setUserSpeaks(false)
@@ -77,7 +85,7 @@ export default function InterviewRoom({interview}:{interview: any}) {
     }
     const assistantOverrides = {
         variableValues: {
-            questions: interview?.questions.join("\n - ")
+            questions: interview?.questions?.join("\n - ")
         }
     };
     const startCall = async () => {
@@ -89,7 +97,7 @@ export default function InterviewRoom({interview}:{interview: any}) {
         vapi.stop();
         const {data} = await axios.post('/api/feedback' , {messages ,id:interview?.id})
         console.log(data);
-        
+        setFeedbacks(data?.feedback?.analysis)
     };
     return (
         <motion.section
@@ -103,12 +111,15 @@ export default function InterviewRoom({interview}:{interview: any}) {
                 duration: 0.5,
                 ease: "easeInOut"
             }}
-            className="h-full flex flex-col  gap-16 ">
+            className="h-full flex flex-col   ">
             <div className="border-b border-neutral-200/55 font-mono   w-full p-4">
                 <h1 className="first-letter:capitalize tracking-tight ">
                     Take your interview
                 </h1>
             </div>
+            <div className="flex h-full flex-col lg:flex-row ">
+            <section className="flex-grow h-full py-12 space-y-12">
+                
             <div className="max-w-5xl w-full  mx-auto grid grid-cols-2 gap-3 px-4">
                 <div className="border border-neutral-100 h-72 bg-neutral-50  rounded flex items-center justify-center ">
                     <Agent icon={<AudioLines />} volume={volumeLevel} isSpeaking={assistantIsSpeaking} />
@@ -167,6 +178,20 @@ export default function InterviewRoom({interview}:{interview: any}) {
 
                     }
                 </AnimatePresence>
+            </div>
+            </section>
+            <section className="border-l  h-full w-full lg:w-140 border-neutral-200/75 col-span-4"> 
+            <div className="border-b border-b-neutral-200/55 p-2">
+                <h1 className="font-mono">Feedback</h1>
+            </div>
+            <div className="grid">
+                {
+                    validFeedbacks.length > 0 && validFeedbacks.map((feedback : any,index:number)=>(
+                    <Feedback key={index} category={feedback?.category} feedback={feedback.feedback} icon={feedback.icon}/>
+                    ))
+                }
+            </div>
+            </section>
             </div>
         </motion.section>
     );

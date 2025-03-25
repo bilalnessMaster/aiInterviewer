@@ -1,12 +1,15 @@
 import React from 'react'
 import InterviewRoom from './interview-room'
 import { getInterview } from '@/app/utils/actions'
+import { redirect } from 'next/navigation'
 
-const page = async (props: {params: Promise<{id?:string}>}) => {
-    const params = await props.params
-    const id = params.id
+const page = async (props: {searchParams: Promise<{id?:string}>}) => {
+    const searchParams = await props.searchParams
+    const id = searchParams.id 
     const interview = await getInterview(id)
-    console.log(interview);
+    if(!interview?.length){
+      return redirect('/dashboard')
+    }
     
   return (
     <>
@@ -15,4 +18,4 @@ const page = async (props: {params: Promise<{id?:string}>}) => {
   )
 }
 
-export default page
+export default page;

@@ -41,7 +41,7 @@ export const getInterview = async (id : string | undefined) =>{
     }
     interview = await sql`select * from "Interview" where  id = ${id} limit 1`
 
-    return interview;
+    return !interview.length ? [] : interview;
   } catch (error) {
     console.log(error);
     return null;
