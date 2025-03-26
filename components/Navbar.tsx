@@ -1,6 +1,5 @@
 'use client'
 import { signOut, useSession } from 'next-auth/react'
-import { StaticImport } from 'next/dist/shared/lib/get-img-props'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState } from 'react'
@@ -39,7 +38,7 @@ const Navbar = () => {
                                     <Link key={id} href={href} className='relative group/link'>
                                         <i className={icon}></i>
                                         <span className='absolute  text-xs pointer-events-none inset-y-0 inline-flex bg- items-center w-32 font-mono  first-letter:capitalize  transition-opacity duration-150 opacity-0 -right-36 group-hover/link:opacity-100  group-hover/link:pointer-events-auto '>
-                                            <span className='px-1 bg-yellow-300/45 font-medium'>{name}</span>
+                                            <span className='px-1 bg-amber-200 text-amber-900 rounded font-medium'>{name}</span>
                                         </span>
                                     </Link>
                                 ))
@@ -71,7 +70,9 @@ const Navbar = () => {
                                     <span className='text-neutral-400'>{session?.user?.email}</span>
                                 </span>
                             </div>
-                            <button className='flex  cursor-pointer  hover:bg-neutral-100 items-center gap-2 p-1 ' onClick={handleLogout}>
+                            <button 
+                            disabled={isLoading}
+                            className='flex  cursor-pointer  hover:bg-neutral-100 items-center gap-2 p-1 ' onClick={handleLogout}>
                                 <span className='inline-flex size-9 items-center justify-center  rounded-full font-mono text-xs '>
                                     <i className="hgi hgi-stroke hgi-logout-02 text-xl"></i>
                                 </span>

@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono , Inter} from "next/font/google";
 import { SessionProvider } from "next-auth/react"
 import "./globals.css";
-
+const inter = Inter({
+  subsets: ["latin"],
+  weight : ['100' , '200', '300' , '400'],
+  variable : '--font-inter-sans'
+})
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,7 +35,7 @@ export default function RootLayout({
 
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${inter.className} ${geistMono.variable} antialiased`}
 
       >
         <SessionProvider>

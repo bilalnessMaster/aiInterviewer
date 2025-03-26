@@ -29,7 +29,7 @@ export const POST = async (req: Request) => {
                     "feedback": "text"
                 },
                 {
-                    "category": "problem_solving",
+                    "category": "problem solving",
                     "icon": "🧩",
                     "rating": 0-10,
                     "feedback": "text"
