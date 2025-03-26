@@ -7,8 +7,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { AudioLines, User } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Loader from "@/components/Loader";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+  const Router = useRouter()
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [message, setMessage] = useState('')
@@ -16,57 +19,85 @@ export default function Page() {
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [userSpeak, setUserSpeaks] = useState(false)
   const {data : session} = useSession()
-
+  const [redirect , setRedirect] = useState(false)
 
   
 
   // hook into Vapi events
   useEffect(() => {
-
-    vapi.on("call-start", () => {
+    const onCallStart =  () => {
       setConnecting(false);
       setConnected(true);
-    });
-
-    vapi.on("message", (message) => {
-       if (message?.role === 'user') {
-        setUserSpeaks(true)
-        setMessage(message?.transcript)
-      } else if (message?.role === 'assistant') {
-        setUserSpeaks(false)
-        if (message?.transcriptType === 'final') {
-          setMessage(message?.transcript)
-        }
-      } else {
-        setUserSpeaks(false)
-      }
-    });
-
-    vapi.on("call-end", () => {
+    }
+    const onMessage =  (message : {role: string , transcript : string , transcriptType:string}) => {
+      if (message?.role === 'user') {
+       setUserSpeaks(true)
+       setMessage(message?.transcript)
+     } else if (message?.role === 'assistant') {
+       setUserSpeaks(false)
+       if (message?.transcriptType === 'final') {
+         setMessage(message?.transcript)
+       }
+     } else {
+       setUserSpeaks(false)
+     }
+   }    
+    const onCallEnd = () => {
+       
+        
+      setRedirect(true)
       setConnecting(false);
       setConnected(false);
-    });
-
-    vapi.on("speech-start", () => {
+ 
+    } 
+    const onSpeechStart = () => {
       setConnected(true)
       setAssistantIsSpeaking(true);
-    });
-
-    vapi.on("speech-end", () => {
+    }
+    const onSpeechEnd =() => {
       setAssistantIsSpeaking(false);
-    });
-
-    vapi.on("volume-level", (level) => {
+    } 
+    const onVolumeUp = (level:number) => {
       setVolumeLevel(level);
-    });
-
-    vapi.on("error", (error) => {
-      console.log(error);
+    }
+    const onError = (error : Error) => {
+      console.error("Vapi error:", error);
+      setRedirect(true)
       setConnected(false)
       setConnecting(false);
-    });
+    }
+    vapi.on("call-start",onCallStart);
 
+    vapi.on("message",onMessage);
+
+    vapi.on("call-end", onCallEnd);
+
+    vapi.on("speech-start", onSpeechStart);
+
+    vapi.on("speech-end", onSpeechEnd);
+
+    vapi.on("volume-level",onVolumeUp);
+
+    vapi.on("error", onError);
+    return () => {
+      vapi.off("call-start", onCallStart);
+      vapi.off("call-end", onCallEnd);
+      vapi.off("message", onMessage);
+      vapi.off('volume-level',onVolumeUp)
+      vapi.off("speech-start", onSpeechStart);
+      vapi.off("speech-end", onSpeechEnd);
+      vapi.off("error", onError);
+    };
+  
   }, []);
+  useEffect(()=>{
+    if(redirect){
+      toast.success("Your interview has been created. You will be directed to the interview page.");
+      setTimeout(() => {
+        Router.push("/interview");
+      }, 1000);
+    }
+  },[redirect, Router])
   if(!session?.user?.id) {
     return <Loader />
   }

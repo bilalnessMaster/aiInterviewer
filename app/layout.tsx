@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono , Inter} from "next/font/google";
 import { SessionProvider } from "next-auth/react"
 import "./globals.css";
+import { Toaster } from "sonner";
 const inter = Inter({
   subsets: ["latin"],
   weight : ['100' , '200', '300' , '400'],
@@ -42,6 +43,7 @@ export default function RootLayout({
 
         {children}
         </SessionProvider>
+        <Toaster richColors />
       </body>
     </html>
   );

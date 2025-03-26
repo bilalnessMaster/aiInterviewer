@@ -32,14 +32,11 @@ export default function InterviewRoom({ interview }: interviewProps) {
         feedbacks.filter((fb) => fb?.category && fb.feedback)
     ), [feedbacks])
     useEffect(() => {
-
-        vapi.on("call-start", () => {
+        const onCallStart = () => {
             setConnecting(false);
             setConnected(true);
-        });
-
-        vapi.on("message", (message) => {
-            console.log(message);
+        }
+        const onMessage = (message: { role: string, transcript: string, transcriptType: string }) => {
 
             if (message?.role === 'user') {
                 setUserSpeaks(true)
@@ -59,31 +56,49 @@ export default function InterviewRoom({ interview }: interviewProps) {
             } else {
                 setUserSpeaks(false)
             }
-        });
-
-        vapi.on("call-end", () => {
+        }
+        const onCallEnd = () => {
             setConnecting(false);
             setConnected(false);
-        });
 
-        vapi.on("speech-start", () => {
+        }
+        const onSpeechStart = () => {
             setConnected(true)
             setAssistantIsSpeaking(true);
-        });
-
-        vapi.on("speech-end", () => {
+        }
+        const onSpeechEnd = () => {
             setAssistantIsSpeaking(false);
-        });
-
-        vapi.on("volume-level", (level) => {
+        }
+        const onVolumeUp = (level: number) => {
             setVolumeLevel(level);
-        });
-
-        vapi.on("error", (error) => {
-            console.log(error);
+        }
+        const onError = (error: Error) => {
+            console.error("Vapi error:", error);
             setConnected(false)
             setConnecting(false);
-        });
+        }
+        vapi.on("call-start", onCallStart);
+
+        vapi.on("message", onMessage);
+
+        vapi.on("call-end", onCallEnd);
+
+        vapi.on("speech-start", onSpeechStart);
+
+        vapi.on("speech-end", onSpeechEnd);
+
+        vapi.on("volume-level", onVolumeUp);
+
+        vapi.on("error", onError);
+        return () => {
+            vapi.off("call-start", onCallStart);
+            vapi.off("call-end", onCallEnd);
+            vapi.off("message", onMessage);
+            vapi.off('volume-level', onVolumeUp)
+            vapi.off("speech-start", onSpeechStart);
+            vapi.off("speech-end", onSpeechEnd);
+            vapi.off("error", onError);
+        };
     }, []);
     if (!session?.user?.id) {
         return <Loader />
@@ -195,9 +210,9 @@ export default function InterviewRoom({ interview }: interviewProps) {
                         {
 
                             isLoading ?
-                                Array.from({length : 4}, (_, index)=>(
+                                Array.from({ length: 4 }, (_, index) => (
                                     <Skeletonfeedback key={index} />
-                                ))    
+                                ))
 
                                 : validFeedbacks.length > 0 ?
                                     validFeedbacks.map((feedback: FeedbackItem, index: number) => (
@@ -206,7 +221,7 @@ export default function InterviewRoom({ interview }: interviewProps) {
                                     : (<div className="flex flex-col h-32 w-full gap-1 items-center justify-center ">
                                         <i className="hgi hgi-stroke hgi-comment-02 text-3xl"></i>
                                         <span className=" font-mono">NO FEEDBACK</span>
-                                        </div>)
+                                    </div>)
                         }
                     </div>
                 </section>
